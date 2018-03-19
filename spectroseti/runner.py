@@ -51,7 +51,8 @@ class LaserSearch():
         pass
 
 
-    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,search_percentile=75, multi_cores=1):
+    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,
+                   search_percentile=75, multi_cores=1):
         # don't need the raw at first
         # raw = apf.APFRawObs(run, observation)
         reduced_spectrum = apf.APFRedObs(run, observation)
@@ -70,7 +71,8 @@ class LaserSearch():
         reduced_spectrum.deblaze_orders(method='meanshift', multi_cores=multi_cores)
         # Load deviations with the meanshift method
         # loaddevs -> findhigher -> find_deviations -> getpercentile (has meanshift method)
-        reduced_spectrum.loaddevs(method=load_devs_method,n_mads=number_mads,percentile=search_percentile)
+        reduced_spectrum.loaddevs(method=load_devs_method,n_mads=number_mads,
+                                  percentile=search_percentile, multi_cores=multi_cores)
 
         # Here we go back and check the bstar spectrum for the same positives
         # One way to proceed is:
@@ -81,7 +83,8 @@ class LaserSearch():
         return reduced_spectrum
 
 
-    def search_multiple(self, observations, output_pngs=0, logfile=0, db_write=0, stats=0, multi_cores=1):
+    def search_multiple(self, observations, output_pngs=0, logfile=0,
+                        db_write=0, stats=0, multi_cores=1):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
         ctr = 1

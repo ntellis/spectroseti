@@ -86,11 +86,15 @@ class APFRedObs(spec.ReducedObs):
             raise KeyError(
                 'The deblaze method you have passed is not implemented. Please pick from savitzky, bstar, and meanshift')
 
-    def loaddevs(self, method='simple', n_mads=5, percentile=75):
+    def loaddevs(self, method='simple', n_mads=5, percentile=75, multi_cores=1):
         if method == 'simple':
             self.devs, self.percentiles_and_thresholds = findhigher(self, n_mads, percentile, atlas=self.atlas)
             self.devs_set = 1
         # An even simpler method that is only 4 pix >1.3*med
+        if method == 'multiprocess':
+            self.devs, self.percentiles_and_thresholds = findhigher(self, n_mads, percentile, atlas=self.atlas,
+                                                                    method='multiprocess',multi_cores=multi_cores)
+            self.devs_set = 1
         if method == 'simpler':
             self.devs, self.percentiles_and_thresholds = findhigher(self, n_mads, percentile, atlas=self.atlas,
                                                                     method='basic')
@@ -182,7 +186,7 @@ class APFRawObs(spec.RawObs):
 
 # Turned off AltMinThresh for now. See what this does.
 def find_deviations(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=0, atlas=spec.WavelengthAtlas(), out=[],
-                    npix=3, acc=[]):
+                    npix=3, acc=[], precomputed_percentile = None, precomputed_threshold = None):
     """
         The meat of the laser search pipeline, this function finds all pixel regions that deviate
         over an entire spectroscopic order.
@@ -200,8 +204,14 @@ def find_deviations(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=0, atla
                                         median deviate pixel, midpt pixel value], ...]
     """
     l = len(ords[0])
-    percentile = utilities.getpercentile(ords[order], perc)
-    threshold = utilities.findthresh(ords[order] - percentile)
+    if not precomputed_percentile:
+        percentile = utilities.getpercentile(ords[order], perc)
+    else:
+        percentile = precomputed_percentile
+    if not precomputed_threshold:
+        threshold = utilities.findthresh(ords[order] - percentile)
+    else:
+        threshold = precomputed_threshold
     th2 = 100 + percentile  # TODO - fix second thresholding
     if percentile < 100 and threshold < th2:
         final_threshold = percentile + n_mads * threshold * 1.5
@@ -270,7 +280,7 @@ def find_deviations_basic(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=1
     return out
 
 
-def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original'):
+def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original', multi_cores = 1):
     """
     Finds potential laser candidates using Median
     Absolute Deviation method in find_deviations,
@@ -289,10 +299,6 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original
     :return: list of lists with format [[order,start,len,nth_percentile, threshold set, mean deviate pixel
                                         median deviate pixel, midpt pixel value], ...]
     """
-    # TODO - Rewrite to use pathos
-    # Could pull get_percentile computations out and paralelize these
-
-
     out = []
     per_thr_accumulator = []
     cts = obs.counts
@@ -303,6 +309,25 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original
             out = find_deviations(cts, wavs, i, perc=perc, n_mads=n_mads,
                                   atlas=atlas, out=out, acc=per_thr_accumulator)
         return out, per_thr_accumulator
+
+
+    # --------------------------- WARNING - MULTIPROCESSING ---------------
+    #  Perform a multicore dearch for laser lines by pulling out the percentile, threshold computation
+    #  Pathos allows for generic functions to be used (uses dill vs pickle)
+    #  Take care not to overwhelm shared resources
+
+    elif method == 'multiprocess':
+        # Lambda function denoting the xth percentile (continuum value)
+        compute_percentile = lambda x: utilities.getpercentile(cts[x],perc)
+        p = Pool(multi_cores)
+        pool_output = Pool.map(p, compute_percentile, range(79))
+        percentiles = np.array(pool_output)
+        for i in tqdm(range(79), leave=False, miniters=8):
+            out = find_deviations(cts, wavs, i, perc=perc, n_mads=n_mads,
+                                        atlas=atlas, out=out, acc=per_thr_accumulator,
+                                        precomputed_percentile=percentiles[i])
+        return out, per_thr_accumulator
+    # Deprecated, used for a simplistic > 1.3* continuum threshold
     elif method == 'basic':
         print('Searching order-by-order...')
         for i in tqdm(range(79), leave=False, miniters=8):

@@ -10,4 +10,4 @@ observations =[['baa',201],['baa',202],['baa',203],['baa',204]]#,['awx',222],['a
 
 LS = runner.LaserSearch()
 
-LS.search_multiple(observations,output_pngs=1)
+LS.search_multiple(observations,   output_pngs=1)
