@@ -6,22 +6,12 @@
 # Contains template classes and methods for manipulating spectra
 
 import numpy as np
+
 import definitions as defs
 import utilities as utilities
 from utilities import getpercentile, findthresh, finddeviates, hires_ignored_wavelengths, has_singularity
 
 __author__ = 'nate'
-
-from astropy.io import fits
-from astropy.stats import median_absolute_deviation as mad_std
-from scipy.stats import mode
-import random
-import scipy.ndimage.filters as filters
-from scipy.optimize import curve_fit
-
-import matplotlib.pyplot as plt
-
-
 
 
 # ------------------------------------------------------------------------------

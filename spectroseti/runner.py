@@ -11,12 +11,9 @@ __author__ = 'nate'
 
 
 import definitions as defs
-import utilities as util
-import spectra as spec
 import apf as apf
 import apfdefinitions as apfdefs
 #import output
-import copy
 import numpy as np
 from tqdm import tqdm
 

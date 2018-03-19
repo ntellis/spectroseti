@@ -1,4 +1,5 @@
 import matplotlib
+
 matplotlib.use('TkAgg')
 
 import spectroseti.runner as runner

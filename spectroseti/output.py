@@ -11,17 +11,6 @@ from matplotlib import pyplot as plt
 __author__ = 'nate'
 
 
-import definitions as defs
-import utilities as utilities
-import spectra as spec
-import apf as apf
-import apfdefinitions as apfdefs
-import sqlite3
-
-
-
-
-
 def view_dev(spec,devnum=0,raw=None, save=0,):
     # if Raw is supplied, plots raw postage stamp
 
