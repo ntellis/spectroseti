@@ -22,6 +22,7 @@ import apfdefinitions as apfdefs
 import definitions as defs
 import utilities as utilities
 import spectra as spec
+from pathos.multiprocessing import ProcessingPool as Pool
 from tqdm import tqdm
 
 
@@ -62,7 +63,7 @@ class APFRedObs(spec.ReducedObs):
             print('Fatal Error - r%(run)s.%(obs)s.fits not found!' % locals())
 
     def deblaze_orders(self,method='meanshift', percentile_kernel = 101, savitzky_kernel=2001,
-                       savitzky_degree=4, perc=50, bstar_correction=None):
+                       savitzky_degree=4, perc=50, bstar_correction=None, multi_cores = 1):
         if method == 'savitzky':
             deblaze = lambda x: utilities.deblaze(x, method='savitzky', percentile_kernel=percentile_kernel,
                                                   savitzky_kernel=savitzky_kernel,
@@ -80,7 +81,17 @@ class APFRedObs(spec.ReducedObs):
             deblaze = lambda x: utilities.deblaze(x, method='meanshift', percentile_kernel=percentile_kernel,
                                                   savitzky_kernel=savitzky_kernel,
                                                   savitzky_degree=savitzky_degree, perc=perc)
-            self.counts = np.apply_along_axis(deblaze, 1, self.counts)
+
+
+            #--------------------------- WARNING - MULTIPROCESSING ---------------
+            #  Perform a multicore deblaze
+            #  Pathos allows for generic functions to be used (uses dill vs pickle)
+            if multi_cores > 1:
+                p = Pool(multi_cores)
+                pool_output = Pool.map(p, deblaze, self.counts)
+                self.counts = np.array(pool_output)
+            else:
+                self.counts = np.apply_along_axis(deblaze, 1, self.counts)
         else:
             raise KeyError(
                 'The deblaze method you have passed is not implemented. Please pick from savitzky, bstar, and meanshift')
@@ -288,6 +299,10 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(),method='original'
     :return: list of lists with format [[order,start,len,nth_percentile, threshold set, mean deviate pixel
                                         median deviate pixel, midpt pixel value], ...]
     """
+    # TODO - Rewrite to use pathos
+    # Could pull get_percentile computations out and paralelize these
+
+
     out = []
     per_thr_accumulator = []
     cts = obs.counts
@@ -306,11 +321,3 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(),method='original'
         return out, per_thr_accumulator
     else:
         raise NameError('Incorrect method keyword')
-
-
-def deblaze(arr):
-    l = len(arr[:-1])
-    CS = utilities.poly_interpolator(arr[:-1],degree=5,nseg=15,percentile=80)
-    return arr[:-1]/(CS(np.arange(l))/np.percentile(CS(np.arange(l)),95))
-
-
