@@ -102,7 +102,11 @@ class LaserSearch():
             run = observation[0]
             obs = observation[1]
             try:
-                reduced_spectrum = self.search_one(run, obs, multi_cores=multi_cores)
+                if multi_cores>1:
+                    method = 'multiprocess'
+                else:
+                    method = 'simple'
+                reduced_spectrum = self.search_one(run, obs, load_devs_method=method, multi_cores=multi_cores)
             # TODO - this does not work for now
             except InvalidTargetError as err:
                 print('Attempted to perform search on:    ' + err.message)
