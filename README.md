@@ -15,6 +15,26 @@ WIP
 Installation
 --------------------------
 
+You can easily configure a local instance of python with all of the package dependencies, but if you do not want to do this, you can use ``miniconda``.
+
+Currently ``spectroseti`` supports only python 2.7.x
+
+
+##### To install with ``miniconda``
+
+```commandline
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+chmod +x Miniconda2-latest-Linux-x86_64.sh
+./Miniconda2-latest-Linux-x86_64.sh
+```
+
+This should have added miniconda to your PATH, but if it failed, add this line to your .bashrc:
+```commandline
+export PATH="/INSTALLDIR/miniconda2/bin:$PATH"
+```
+where `INSTALLDIR` is the directory to which miniconda was installed (by default /home/your_user_name/)
+
+
 
 Dependencies:
 numpy
@@ -25,6 +45,7 @@ tqdm
 scipy
 astropy
 random
+sklearn
 
 
 WIP

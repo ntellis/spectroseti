@@ -16,7 +16,7 @@ import apfdefinitions as apfdefs
 #import output
 import numpy as np
 from tqdm import tqdm
-
+import pandas as pd
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -151,4 +151,13 @@ class LaserSearch():
         if logfile:
             #save logfile to logfile directory, as well as search run directory
             pass
+
+
+def RunObsFromLogsheet(filename):
+    #check fixrows
+    #check header
+    pd.read_fwf(filename, skiprows=11, header=None,
+                names=['Obs', 'Target', 'Iodine', 'UTC', 'Exptime', 'Deck', 'Counts', 'HA', 'AZ/EL', 'SpecTemp',
+                       'DomeTemp', 'Seeing'])
+    pass
 

@@ -85,6 +85,34 @@ class Injector:
         else:
             print('Either spectrum is not set or lasers are not chosen')
 
+    # Test for recovery of simulated signals
+    def recovery(self, deblaze='both', bypass_threshold=True, repetitions=100, per_order=10,):
+        pass
+
+        # This should take deblazing parameters, repetitions
+
+        # Should run the target without any injection, collect positives, mask out these locations
+        # SHould also mask out the locations of stellar emission lines
+        # Should also mask out night sky lines?
+
+        # Run, record
+            # Inject, record injections
+                # Run, compare recovery, inc overlapping injections
+
+        # log to a file or to terminal
+
+        # How to speed this up? It will be very hard to run thousands of trials at a minute each
+        # One possibility is to inject the lasers at the end, pretending that it didn't affect deblazing?
+        # This would allow us to run a bunch of lasers after deblazing, and threshold have been determined.
+        # in fact it makes more sense to add lasers at this stage (post - deblazing) due to flattening
+        '''
+        So the flow is:
+        deblaze savitzky
+        opt: store (deep copy) spectrum
+        deblaze meanshift
+        run search
+        opt: run search on savitzky spectrum
+        '''
 
 def gen_laser_profile(power=1.0):
     kernel = np.zeros(12)

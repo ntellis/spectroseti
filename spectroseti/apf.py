@@ -24,8 +24,8 @@ class APFRedObs(spec.ReducedObs):
 
     def __init__(self, run, obs, atlas=spec.WavelengthAtlas()):
         self.devs_set = 0
-        self.run = ''
-        self.obs = 0
+        self.run = run
+        self.obs = obs
         self.loadobservation(run, obs)
         self.atlas = atlas
 
@@ -52,6 +52,21 @@ class APFRedObs(spec.ReducedObs):
         except IOError:
             self.dat = None
             print('Fatal Error - r%(run)s.%(obs)s.fits not found!' % locals())
+    def plot_order(self,order,scaling='auto'):
+
+        if scaling == 'auto':
+            run=self.run
+            obs=self.obs
+            plt.figure()
+            plt.plot(self.wavs[order,:], self.counts[order,:-1])
+            plt.scatter(self.wavs[order,:], self.counts[order,:-1],c='r',s=6.)
+            plt.title(('Order %(order)s of ' % locals()) + self.dat[0].header['OBJECT'] +
+                      ' in r%(run)s.%(obs)s.fits' % locals())
+            plt.ylabel('Flux (Counts)')
+            plt.xlabel('Wavelength (Angstrom)')
+
+        else:
+            raise NotImplementedError
 
     def deblaze_orders(self, method='meanshift', percentile_kernel=101, savitzky_kernel=2001,
                        savitzky_degree=4, perc=50, bstar_correction=None, multi_cores=1):
@@ -156,8 +171,33 @@ class APFRawObs(spec.RawObs):
         xhigh = self.rawdims[0] if index - xradius > self.rawdims[0] else index + xradius
         return self.data[int(ylow):int(yhigh), int(xlow):int(xhigh)]
 
-    def cr_reject(self, order, pix):
-        raise NotImplementedError
+    def cr_reject(self, order, pix, method='std',xradius=20,yradius=12):
+        if method == 'std':
+            postage_stamp = self.retrieve_subset(order, pix, yradius=yradius, xradius=xradius)
+            means = np.repeat(np.reshape(np.apply_along_axis(
+                lambda x: np.mean(x[x<np.percentile(x,90)]),1,postage_stamp),
+                (yradius*2,1)),repeats=xradius*2,axis=1)
+            #
+            # plt.imshow(means, cmap='viridis')
+            # plt.colorbar()
+            stds = np.repeat(np.reshape(np.apply_along_axis(
+                lambda x: np.std(x[x<np.percentile(x,90)]),1,postage_stamp),
+                (yradius*2,1)),repeats=xradius*2,axis=1)
+            #
+            # plt.imshow(stds, cmap='viridis')
+            # plt.colorbar()
+            comp = (postage_stamp - means) / stds
+            plt.imshow(comp, cmap='viridis')
+            plt.colorbar()
+            print(comp[:,xradius-3:xradius+3])
+            return np.max(comp[:,xradius-3:xradius+3])
+            # if np.any(comp[:,xradius-3:xradius+3] > 12):
+            #     return
+            # else:
+            #     return 'Does not appear to be a cosmic ray.'
+        elif method == 'differential':
+            postage_stamp = self.retrieve_subset(order, pix, yradius=8, xradius=5)
+
 
     def run_obs_to_filename(self, run, obs):
         """Simple utility to translate from run/obs int pair to raw filename."""
