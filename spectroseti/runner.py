@@ -84,7 +84,7 @@ class LaserSearch():
 
 
     def search_multiple(self, observations, output_pngs=0, logfile=0,
-                        db_write=0, stats=0, multi_cores=1):
+                        db_write=0, stats=0, multi_cores=1,number_mads = 5):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
         ctr = 1
@@ -99,6 +99,7 @@ class LaserSearch():
 
         # a little pseudocodey
         for observation in observations:
+            print(observation)
             run = observation[0]
             obs = observation[1]
             try:
@@ -106,11 +107,14 @@ class LaserSearch():
                     method = 'multiprocess'
                 else:
                     method = 'simple'
-                reduced_spectrum = self.search_one(run, obs, load_devs_method=method, multi_cores=multi_cores)
+                reduced_spectrum = self.search_one(run, obs, load_devs_method=method,
+                                                   multi_cores=multi_cores,number_mads=number_mads)
             # TODO - this does not work for now
             except InvalidTargetError as err:
                 print('Attempted to perform search on:    ' + err.message)
                 print('Skipping....\n')
+                continue
+            except:
                 continue
 
             if output_pngs:
@@ -141,8 +145,8 @@ class LaserSearch():
                 perc_thresh_dict[title] = reduced_spectrum.percentiles_and_thresholds
                 deviation_dict[title] = reduced_spectrum.devs
                 # Just save every iteration in case it breaks
-                np.save(defs.project_root_dir+'/spectroseti/data/Percentiles_and_thresholds.npy', perc_thresh_dict)
-                np.save(defs.project_root_dir+'/spectroseti/data/Candidates.npy', deviation_dict)
+                np.save(defs.project_root_dir+'/spectroseti/data/Percentiles_and_thresholds2.npy', perc_thresh_dict)
+                np.save(defs.project_root_dir+'/spectroseti/data/Candidates2.npy', deviation_dict)
 
 
 

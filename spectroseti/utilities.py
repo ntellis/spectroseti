@@ -358,7 +358,16 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         kde = KernelDensity(kernel=kernel, bandwidth=kernel_bandwidth).fit(order)
 
     elif method == 'meanshift':
-        bandwidth = estimate_bandwidth(order[:,np.newaxis], quantile=0.1)
+        try:
+            bandwidth = estimate_bandwidth(order[:,np.newaxis], quantile=0.1)
+        except ValueError:
+            # Replace the NaN with enarest value
+            order_to_estimate = order[:,np.newaxis]
+            ind = np.where(~np.isinf(order_to_estimate))[0]
+            first, last = ind[0], ind[-1]
+            order_to_estimate[:first] = order_to_estimate[first]
+            order_to_estimate[last + 1:] = order_to_estimate[last]
+            bandwidth = estimate_bandwidth(order_to_estimate, quantile=0.1)
         # print ('Bandwidth is {0}'.format(bandwidth))
         ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
         ms.fit(order[:,np.newaxis])

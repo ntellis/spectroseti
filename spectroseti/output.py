@@ -55,10 +55,13 @@ def view_dev(spec,devnum=0,raw=None, save=0,):
                    colors='g', label='Threshold (ms+5*MAD)')
         plt.xlabel('Wavelength (Ang)')
         plt.ylabel('Counts per pixel')
-
+        reject = 'no_raw'
+        if raw:
+            pass
+            reject = raw.cr_reject(ord, mid)
         ax = plt.gca()
         ax.set_title(
-            'Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: . Order %(ord)s, central pixel %(central)s' % locals())
+            'Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: . Order %(ord)s, central pixel %(central)s, reject value: %(reject)s' % locals())
         plt.tight_layout()
         if raw:
             plt.subplot(313)

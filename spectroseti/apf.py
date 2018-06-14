@@ -187,9 +187,9 @@ class APFRawObs(spec.RawObs):
             # plt.imshow(stds, cmap='viridis')
             # plt.colorbar()
             comp = (postage_stamp - means) / stds
-            plt.imshow(comp, cmap='viridis')
-            plt.colorbar()
-            print(comp[:,xradius-3:xradius+3])
+            #plt.imshow(comp, cmap='viridis')
+            #plt.colorbar()
+            #print(comp[:,xradius-3:xradius+3])
             return np.max(comp[:,xradius-3:xradius+3])
             # if np.any(comp[:,xradius-3:xradius+3] > 12):
             #     return

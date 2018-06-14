@@ -20,4 +20,4 @@ observations.sort()
 
 LS = runner.LaserSearch()
 
-LS.search_multiple(observations[24:],output_pngs=0,multi_cores=mp.cpu_count(), stats=1)
+LS.search_multiple(observations[80:],output_pngs=0,multi_cores=mp.cpu_count(), stats=1)
