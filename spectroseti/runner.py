@@ -17,6 +17,8 @@ import apfdefinitions as apfdefs
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
+from os import listdir
+from pathos.multiprocessing import ProcessingPool as Pool
 
 class Error(Exception):
     """Base class for exceptions in this module."""
@@ -51,6 +53,8 @@ class LaserSearch():
         pass
 
 
+
+
     def search_one(self, run, observation, load_devs_method='simple',number_mads=5,
                    search_percentile=75, multi_cores=1):
         # don't need the raw at first
@@ -73,7 +77,7 @@ class LaserSearch():
         # loaddevs -> findhigher -> find_deviations -> getpercentile (has meanshift method)
         reduced_spectrum.loaddevs(method=load_devs_method,n_mads=number_mads,
                                   percentile=search_percentile, multi_cores=multi_cores)
-
+        print('got here')
         # Here we go back and check the bstar spectrum for the same positives
         # One way to proceed is:
         #   compute perc from bstar_deblazed
@@ -84,7 +88,7 @@ class LaserSearch():
 
 
     def search_multiple(self, observations, output_pngs=0, logfile=0,
-                        db_write=0, stats=0, multi_cores=1,number_mads = 5):
+                        db_write=0, stats=0, multi_cores=1,number_mads = 5,quiet=1):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
         ctr = 1
@@ -100,8 +104,13 @@ class LaserSearch():
         # a little pseudocodey
         for observation in observations:
             print(observation)
-            run = observation[0]
-            obs = observation[1]
+            if observations[0][0] =='r':
+                fn_split = observation.split('.')
+                run = fn_split[0][1:]
+                obs = fn_split[1]
+            else:
+                run = observation[0]
+                obs = observation[1]
             try:
                 if multi_cores>1:
                     method = 'multiprocess'
@@ -114,7 +123,8 @@ class LaserSearch():
                 print('Attempted to perform search on:    ' + err.message)
                 print('Skipping....\n')
                 continue
-            except:
+            except Error:
+                print("An error occurred!")
                 continue
 
             if output_pngs:
@@ -126,9 +136,14 @@ class LaserSearch():
                     raw = None
                 ndev = len(reduced_spectrum.devs)
                 print('Writing output images to '+ apfdefs.output_png_dir)
-                for i in tqdm(range(ndev), miniters=int(ndev/10)):
-                    # TODO pass down a folder here for saving the output
-                    spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1)
+                if quiet:
+                    for i in range(ndev):
+                        # TODO pass down a folder here for saving the output
+                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1)
+                else:
+                    for i in tqdm(range(ndev), miniters=int(ndev/10)):
+                        # TODO pass down a folder here for saving the output
+                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1)
                 pass
 
             #TODO this is first priority
@@ -155,6 +170,19 @@ class LaserSearch():
         if logfile:
             #save logfile to logfile directory, as well as search run directory
             pass
+
+    def search_run(self,run='bac', output_pngs=0, logfile=0,
+                        db_write=0, stats=0, multi_cores=1,number_mads = 5):
+        # Look in the reduced dir for files corresponding to this run
+        all_reduced = listdir(self.reduced_directory)
+        files_to_search = [fn for fn in all_reduced if fn[1:4] == run]
+        p = Pool(multi_cores)
+        search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, db_write=db_write,
+                                                      stats=stats, number_mads=number_mads)
+
+        pool_output = Pool.map(p, search_multi, files_to_search)
+
+
 
 
 def RunObsFromLogsheet(filename):

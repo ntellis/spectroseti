@@ -557,3 +557,4 @@ def compute_maxpix_deviance(postage_stamp, xoffset=3,yoffset=3):
                     maxval / postage_stamp_nobias[inds[0], inds[1] + 2],
                     maxval / postage_stamp_nobias[inds[0], inds[1] - 2]]
     return ratios_1step,ratios_2step, maxval
+
