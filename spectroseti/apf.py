@@ -127,6 +127,16 @@ class APFRedObs(spec.ReducedObs):
 
         return self.raw_red_correspondence[ord, pix]
 
+    #   Warning - this needs a linked raw image
+    def dev_has_cr(self, devnum, raw, method='ratio'):
+        if self.devs_set:
+            ord = self.devs[devnum][0]
+            mid = self.devs[devnum][2]+self.devs[devnum][1]/2
+            reject = raw.cr_reject(ord, mid,method=method)
+            return reject
+        else:
+            print("Devs have not been set!")
+
 
 class APFRawObs(spec.RawObs):
     """
@@ -195,9 +205,14 @@ class APFRawObs(spec.RawObs):
             #     return
             # else:
             #     return 'Does not appear to be a cosmic ray.'
-        elif method == 'differential':
-            postage_stamp = self.retrieve_subset(order, pix, yradius=8, xradius=5)
+        elif method == 'ratio':
+            postage_stamp = self.retrieve_subset(order, pix, yradius=yradius, xradius=12)
 
+            one_step,two_step, maxval = utilities.compute_maxpix_deviance(postage_stamp)
+            max1 = np.max(one_step)
+            max2 = np.max(two_step)
+            compval = maxval+ 60*(max1+max2)
+            return compval
 
     def run_obs_to_filename(self, run, obs):
         """Simple utility to translate from run/obs int pair to raw filename."""
@@ -352,7 +367,7 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original
 
 
     # --------------------------- WARNING - MULTIPROCESSING ---------------
-    #  Perform a multicore dearch for laser lines by pulling out the percentile, threshold computation
+    #  Perform a multicore search for laser lines by pulling out the percentile, threshold computation
     #  Pathos allows for generic functions to be used (uses dill vs pickle)
     #  Take care not to overwhelm shared resources
 

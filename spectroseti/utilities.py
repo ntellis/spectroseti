@@ -509,3 +509,51 @@ def normalized(a, axis=-1, order=2):
 def median_of_one(arr):
     med = np.median(arr)
     return arr/med
+
+
+
+
+
+# CR Rejection utilities
+
+def find_max_deviant_pixel(postage_stamp, xoffset=3,yoffset=3):
+    dims = postage_stamp.shape
+    yradius = dims[0]//2
+    xradius = dims[1]//2
+    means = np.repeat(np.reshape(np.apply_along_axis(
+        lambda x: np.mean(x[x < np.percentile(x, 90)]), 1, postage_stamp),
+        (yradius * 2, 1)), repeats=xradius * 2, axis=1)
+
+    stds = np.repeat(np.reshape(np.apply_along_axis(
+        lambda x: np.std(x[x < np.percentile(x, 90)]), 1, postage_stamp),
+        (yradius * 2, 1)), repeats=xradius * 2, axis=1)
+
+    comp = (postage_stamp - means) / stds
+    centercomp = comp[yoffset:-1 - yoffset,
+                 xradius - xoffset:xradius + xoffset]
+    maxinds = np.unravel_index(np.argmax(centercomp), centercomp.shape)
+    return (maxinds[0] + yoffset, maxinds[1] + xradius - xoffset)
+
+def compute_maxpix_deviance(postage_stamp, xoffset=3,yoffset=3):
+    dims = postage_stamp.shape
+    yradius = dims[0] // 2
+    xradius = dims[1] // 2
+    postage_midfive = postage_stamp[:, xradius - 2:xradius + 3]
+    # inds = np.unravel_index(np.argmax(postage_midfive),postage_midfive.shape)
+    # inds = (inds[0],inds[1]+1)
+    inds = find_max_deviant_pixel(postage_stamp, xoffset=xoffset,yoffset=yoffset)
+    #maxval = float(postage_stamp[inds])
+    rowmins = np.min(postage_stamp,axis=1)
+    postage_stamp_nobias = postage_stamp - rowmins[:,None] + 50
+    maxval = float(postage_stamp_nobias[inds])
+    # comps_1step = [maxval - postage_stamp[inds[0] + 1, inds[1]], maxval - postage_stamp[inds[0] - 1, inds[1]],
+    #                maxval - postage_stamp[inds[0], inds[1] + 1], maxval - postage_stamp[inds[0], inds[1] - 1]]
+    ratios_1step = [maxval / postage_stamp_nobias[inds[0] + 1, inds[1]],
+                    maxval / postage_stamp_nobias[inds[0] - 1, inds[1]],
+                    maxval / postage_stamp_nobias[inds[0], inds[1] + 1],
+                    maxval / postage_stamp_nobias[inds[0], inds[1] - 1]]
+    ratios_2step = [maxval / postage_stamp_nobias[inds[0] + 2, inds[1]],
+                    maxval / postage_stamp_nobias[inds[0] - 2, inds[1]],
+                    maxval / postage_stamp_nobias[inds[0], inds[1] + 2],
+                    maxval / postage_stamp_nobias[inds[0], inds[1] - 2]]
+    return ratios_1step,ratios_2step, maxval

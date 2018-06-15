@@ -17,4 +17,3 @@ p = Pool(6)
 search_multi = lambda x: LS.search_multiple([x], output_pngs=1,number_mads=10)
 
 pool_output = Pool.map(p, search_multi, bacrun)
-
