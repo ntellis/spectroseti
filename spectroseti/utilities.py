@@ -543,18 +543,18 @@ def compute_maxpix_deviance(postage_stamp, xoffset=3,yoffset=3):
     # inds = (inds[0],inds[1]+1)
     inds = find_max_deviant_pixel(postage_stamp, xoffset=xoffset,yoffset=yoffset)
     #maxval = float(postage_stamp[inds])
-    rowmins = np.min(postage_stamp,axis=1)
-    postage_stamp_nobias = postage_stamp - rowmins[:,None] + 50
+    rowpercs = np.percentile(postage_stamp,5,axis=1)
+    postage_stamp_nobias = postage_stamp - rowpercs[:,None]
     maxval = float(postage_stamp_nobias[inds])
     # comps_1step = [maxval - postage_stamp[inds[0] + 1, inds[1]], maxval - postage_stamp[inds[0] - 1, inds[1]],
     #                maxval - postage_stamp[inds[0], inds[1] + 1], maxval - postage_stamp[inds[0], inds[1] - 1]]
-    ratios_1step = [maxval / postage_stamp_nobias[inds[0] + 1, inds[1]],
-                    maxval / postage_stamp_nobias[inds[0] - 1, inds[1]],
-                    maxval / postage_stamp_nobias[inds[0], inds[1] + 1],
-                    maxval / postage_stamp_nobias[inds[0], inds[1] - 1]]
-    ratios_2step = [maxval / postage_stamp_nobias[inds[0] + 2, inds[1]],
-                    maxval / postage_stamp_nobias[inds[0] - 2, inds[1]],
-                    maxval / postage_stamp_nobias[inds[0], inds[1] + 2],
-                    maxval / postage_stamp_nobias[inds[0], inds[1] - 2]]
+    ratios_1step = [postage_stamp_nobias[inds[0] + 1, inds[1]]/ maxval ,
+                    postage_stamp_nobias[inds[0] - 1, inds[1]]/ maxval ,
+                    postage_stamp_nobias[inds[0], inds[1] + 1]/ maxval ,
+                    postage_stamp_nobias[inds[0], inds[1] - 1]/ maxval ]
+    ratios_2step = [postage_stamp_nobias[inds[0] + 2, inds[1]]/ maxval ,
+                    postage_stamp_nobias[inds[0] - 2, inds[1]]/ maxval ,
+                    postage_stamp_nobias[inds[0], inds[1] + 2]/ maxval ,
+                    postage_stamp_nobias[inds[0], inds[1] - 2]/ maxval ]
     return ratios_1step,ratios_2step, maxval
 

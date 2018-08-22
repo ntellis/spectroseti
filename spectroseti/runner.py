@@ -138,8 +138,15 @@ class LaserSearch():
                 print('Writing output images to '+ apfdefs.output_png_dir)
                 if quiet:
                     for i in range(ndev):
+                        ord = reduced_spectrum.devs[i][0]
+                        mid = reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1] // 2
+                        reject = raw.cr_reject(ord, mid)
+                        # if reject >=2:
+                        #     continue
                         # TODO pass down a folder here for saving the output
-                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1)
+                        if reduced_spectrum.devs[i][-1] > 6868. and reduced_spectrum.devs[i][-1] < 6885:
+                            continue
+                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1,nmads=number_mads)
                 else:
                     for i in tqdm(range(ndev), miniters=int(ndev/10)):
                         # TODO pass down a folder here for saving the output

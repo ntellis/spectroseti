@@ -181,7 +181,7 @@ class APFRawObs(spec.RawObs):
         xhigh = self.rawdims[0] if index - xradius > self.rawdims[0] else index + xradius
         return self.data[int(ylow):int(yhigh), int(xlow):int(xhigh)]
 
-    def cr_reject(self, order, pix, method='std',xradius=20,yradius=12):
+    def cr_reject(self, order, pix, method='ratio',xradius=20,yradius=12):
         if method == 'std':
             postage_stamp = self.retrieve_subset(order, pix, yradius=yradius, xradius=xradius)
             means = np.repeat(np.reshape(np.apply_along_axis(
@@ -209,9 +209,9 @@ class APFRawObs(spec.RawObs):
             postage_stamp = self.retrieve_subset(order, pix, yradius=yradius, xradius=12)
 
             one_step,two_step, maxval = utilities.compute_maxpix_deviance(postage_stamp)
-            max1 = np.max(one_step)
-            max2 = np.max(two_step)
-            compval = maxval+ 60*(max1+max2)
+            max1 = np.sum(np.array(one_step) < 0.20)
+            max2 = np.sum(np.array(two_step) < 0.07)
+            compval = max1 + max2
             return compval
 
     def run_obs_to_filename(self, run, obs):

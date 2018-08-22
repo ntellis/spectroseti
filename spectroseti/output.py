@@ -58,11 +58,11 @@ def view_dev(spec,devnum=0,raw=None, save=0, nmads=5):
         plt.ylabel('Counts per pixel')
         reject = 'no_raw'
         if raw:
-            pass
             reject = raw.cr_reject(ord, mid)
         ax = plt.gca()
+        targname = spec.dat[0].header['TOBJECT']
         ax.set_title(
-            'Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: . Order %(ord)s, central pixel %(central)s, reject value: %(reject)s' % locals())
+            'Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: %(targname)s   Order %(ord)s, central pixel %(central)s, reject value: %(reject)s' % locals())
         if raw:
             plt.subplot(313)
             subplot_xrad = 50
