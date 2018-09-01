@@ -543,7 +543,7 @@ def compute_maxpix_deviance(postage_stamp, xoffset=3,yoffset=3):
     # inds = (inds[0],inds[1]+1)
     inds = find_max_deviant_pixel(postage_stamp, xoffset=xoffset,yoffset=yoffset)
     #maxval = float(postage_stamp[inds])
-    rowpercs = np.percentile(postage_stamp,5,axis=1)
+    rowpercs = np.percentile(postage_stamp,1,axis=1)
     postage_stamp_nobias = postage_stamp - rowpercs[:,None]
     maxval = float(postage_stamp_nobias[inds])
     # comps_1step = [maxval - postage_stamp[inds[0] + 1, inds[1]], maxval - postage_stamp[inds[0] - 1, inds[1]],

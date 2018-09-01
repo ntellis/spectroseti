@@ -210,7 +210,7 @@ class APFRawObs(spec.RawObs):
 
             one_step,two_step, maxval = utilities.compute_maxpix_deviance(postage_stamp)
             max1 = np.sum(np.array(one_step) < 0.20)
-            max2 = np.sum(np.array(two_step) < 0.07)
+            max2 = np.sum(np.array(two_step) < 0.06)
             compval = max1 + max2
             return compval
 
