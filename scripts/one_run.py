@@ -151,6 +151,8 @@ bacrun = [['bac', 179],
           ['bac', 321],
           ['bac', 322], ]
 
+bacrun = [['bez', 216]]
+
 LS = runner.LaserSearch()
 
 #LS.search_multiple(observations, output_pngs=1, number_mads=8)

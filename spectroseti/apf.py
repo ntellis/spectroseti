@@ -68,6 +68,21 @@ class APFRedObs(spec.ReducedObs):
         else:
             raise NotImplementedError
 
+    def plot_all_orders(self):
+        for i in range(79):
+            run = self.run
+            obs = self.obs
+            plt.figure(figsize=[15,10])
+            plt.plot(self.wavs[i, :], self.counts[i, :-1])
+            plt.scatter(self.wavs[i, :], self.counts[i, :-1], c='r', s=6.)
+            plt.title(('Order %(i)s of ' % locals()) + self.dat[0].header['OBJECT'] +
+                      ' in r%(run)s.%(obs)s.fits' % locals())
+            plt.ylabel('Flux (Counts)')
+            plt.xlabel('Wavelength (Angstrom)')
+            plt.savefig(apfdefs.reduced_orders_dir + ('Order %(i)s of ' % locals()) + self.dat[0].header['OBJECT'] + '.png')
+            plt.cla()
+            plt.close()
+
     def deblaze_orders(self, method='meanshift', percentile_kernel=101, savitzky_kernel=2001,
                        savitzky_degree=4, perc=50, bstar_correction=None, multi_cores=1):
         if method == 'savitzky':
@@ -279,13 +294,18 @@ def find_deviations(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=0, atla
         final_threshold = 1.3 * percentile
         secondary_threshold = 1.15 * percentile
     # Accumulator for testing whole-dataset thresholding
+
+    if order == 35:
+        print(percentile)
+        print(threshold)
+        print(final_threshold)
+        pass
     acc.append([percentile, final_threshold])
     contig = utilities.finddeviates(ords[order], final_threshold, npix=npix)
     if len(contig) != 0:
         for x in contig:
             midpt = x[0] // 2 + x[1]
-            if l * 0.02 < midpt < l - l * 0.02 and x[1] > l * 0.01 and x[0] + x[
-                1] < l - l * .01:  # \ COMMENTED OUT THE IGNORED WAVELENGTHS
+            if x[1] > 500 and x[0] + x[1] < 4108:# \ COMMENTED OUT THE IGNORED WAVELENGTHS
                 # and not hires_ignored_wavelengths(wavs[order][midpt]) \
                 # and not list(atlas.ns_lookup(wavs[order][midpt])) and not has_singularity(ords[order]):
                 deviation_pixels = ords[order][x[1]:x[1] + x[0]] - final_threshold
@@ -318,7 +338,10 @@ def find_deviations_basic(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=1
     threshold = utilities.findthresh(ords[order] - percentile)
     final_threshold = 1.5 * percentile
     # Accumulator for testing whole-dataset thresholding
-    if order == 20:
+    if order == 35:
+        print(percentile)
+        print(threshold)
+        print(final_threshold)
         pass
     acc.append([percentile, final_threshold])
     contig = utilities.finddeviates(ords[order], final_threshold, npix=npix)

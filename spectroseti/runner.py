@@ -55,7 +55,7 @@ class LaserSearch():
 
 
 
-    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,
+    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,deblaze_method='bstar',
                    search_percentile=75, multi_cores=1):
         # don't need the raw at first
         # raw = apf.APFRawObs(run, observation)
@@ -65,15 +65,14 @@ class LaserSearch():
             raise InvalidTargetError(None, reduced_spectrum.dat[0].header['TOBJECT'])
 
         # Now first deblaze (Savizky works better on lower orders than b-star)
-        #reduced_spectrum.deblaze_orders(method='bstar',bstar_correction=self.bstar_correction)
-        reduced_spectrum.deblaze_orders(method='savitzky')
+        reduced_spectrum.deblaze_orders(method=deblaze_method,bstar_correction=self.bstar_correction)
 
         # Make a copy of the (bstar-only) deblazed spectrum
         #bstar_deblazed = copy.deepcopy(reduced_spectrum)
-        print('Beginning Meanshift deblazing')
-        # Meanshift deblaze the reduced spectrum
-        reduced_spectrum.deblaze_orders(method='meanshift', multi_cores=multi_cores)
-        # Load deviations with the meanshift method
+        # print('Beginning Meanshift deblazing')
+        # # Meanshift deblaze the reduced spectrum
+        # reduced_spectrum.deblaze_orders(method='meanshift', multi_cores=multi_cores)
+        # # Load deviations with the meanshift method
         # loaddevs -> findhigher -> find_deviations -> getpercentile (has meanshift method)
         reduced_spectrum.loaddevs(method=load_devs_method,n_mads=number_mads,
                                   percentile=search_percentile, multi_cores=multi_cores)
@@ -87,7 +86,7 @@ class LaserSearch():
         return reduced_spectrum
 
 
-    def search_multiple(self, observations, output_pngs=0, logfile=0,
+    def search_multiple(self, observations, output_pngs=0, logfile=0, deblaze_method='bstar',
                         db_write=0, stats=0, multi_cores=1,number_mads = 5,quiet=1):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
@@ -116,7 +115,7 @@ class LaserSearch():
                     method = 'multiprocess'
                 else:
                     method = 'simple'
-                reduced_spectrum = self.search_one(run, obs, load_devs_method=method,
+                reduced_spectrum = self.search_one(run, obs, load_devs_method=method, deblaze_method=deblaze_method,
                                                    multi_cores=multi_cores,number_mads=number_mads)
             # TODO - this does not work for now
             except InvalidTargetError as err:

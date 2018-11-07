@@ -384,6 +384,8 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         # or is this normal behavior?
         try:
             return np.max([cluster_centers[0][0],cluster_centers[1][0],cluster_centers[2][0]])
+        # THIS NNEDS TO RETURN ONLY IF THERE ARE MORE THAN ~100 points in the cluster
+        #in case of bez file from geoff, there are only eleven on saturated line and that is triggering max, being returned.
         except IndexError:
             try:
                 return np.max([cluster_centers[0][0], cluster_centers[1][0]])
