@@ -9,6 +9,7 @@ from scipy.ndimage.filters import percentile_filter
 from scipy.signal import convolve2d
 from sklearn.cluster import MeanShift, estimate_bandwidth
 from sklearn.neighbors import KernelDensity
+from collections import Counter
 
 __author__ = 'nate'
 
@@ -323,6 +324,12 @@ def deblaze(arr, method = 'savitzky', percentile_kernel = 101, savitzky_kernel=2
         med_test = sg.medfilt(test, kernel_size=101)
 
         return arr / med_test * median_of_array
+    elif method == 'percentile':
+        fixval = np.max([np.abs(np.min(arr) * 2), 500.])
+        fix = arr + fixval
+        pcf = percentile_filter(fix, perc, size=percentile_kernel)
+        return fix / (pcf / np.mean(pcf)) - fixval
+
     else:
         raise KeyError('The deblaze method you have passed is not implemented. Please pick from savitzky, bstar, and meanshift')
 
@@ -382,15 +389,9 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         # print(cluster_centers)
         # TODO Determine why there is a index error ocurring here - should there be more than 3 clusters
         # or is this normal behavior?
-        try:
-            return np.max([cluster_centers[0][0],cluster_centers[1][0],cluster_centers[2][0]])
-        # THIS NNEDS TO RETURN ONLY IF THERE ARE MORE THAN ~100 points in the cluster
-        #in case of bez file from geoff, there are only eleven on saturated line and that is triggering max, being returned.
-        except IndexError:
-            try:
-                return np.max([cluster_centers[0][0], cluster_centers[1][0]])
-            except IndexError:
-                return cluster_centers[0][0]
+        label_counter = Counter(labels)
+        top_labels = filter(lambda x: x[1] > 1000, label_counter.most_common())
+        return np.max(map(lambda x: cluster_centers[x[0]][0],top_labels))
     else:
         raise KeyError
 

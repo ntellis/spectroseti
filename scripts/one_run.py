@@ -151,14 +151,14 @@ bacrun = [['bac', 179],
           ['bac', 321],
           ['bac', 322], ]
 
-bacrun = [['bez', 216]]
+bacrun = [['bac', 285]]
 
 LS = runner.LaserSearch()
 
 #LS.search_multiple(observations, output_pngs=1, number_mads=8)
 
 p = Pool(6)
-search_multi = lambda x: LS.search_multiple([x], output_pngs=1,number_mads=10)
+search_multi = lambda x: LS.search_multiple([x], output_pngs=1,number_mads=20, search_title='bac285')
 
 pool_output = Pool.map(p, search_multi, bacrun)
 

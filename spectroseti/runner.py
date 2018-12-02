@@ -17,7 +17,7 @@ import apfdefinitions as apfdefs
 import numpy as np
 from tqdm import tqdm
 import pandas as pd
-from os import listdir
+from os import listdir, mkdir
 from pathos.multiprocessing import ProcessingPool as Pool
 
 class Error(Exception):
@@ -55,13 +55,14 @@ class LaserSearch():
 
 
 
-    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,deblaze_method='bstar',
+    def search_one(self, run, observation, load_devs_method='simple',number_mads=5,deblaze_method='percentile',
                    search_percentile=75, multi_cores=1):
         # don't need the raw at first
         # raw = apf.APFRawObs(run, observation)
         reduced_spectrum = apf.APFRedObs(run, observation)
 
-        if reduced_spectrum.dat[0].header['TOBJECT'] in apfdefs.ignore_targets_apf:
+        if (reduced_spectrum.dat[0].header['TOBJECT'] in apfdefs.ignore_targets_apf)\
+                or (reduced_spectrum.dat[0].header['OBJECT'] in apfdefs.ignore_targets_apf):
             raise InvalidTargetError(None, reduced_spectrum.dat[0].header['TOBJECT'])
 
         # Now first deblaze (Savizky works better on lower orders than b-star)
@@ -76,7 +77,6 @@ class LaserSearch():
         # loaddevs -> findhigher -> find_deviations -> getpercentile (has meanshift method)
         reduced_spectrum.loaddevs(method=load_devs_method,n_mads=number_mads,
                                   percentile=search_percentile, multi_cores=multi_cores)
-        print('got here')
         # Here we go back and check the bstar spectrum for the same positives
         # One way to proceed is:
         #   compute perc from bstar_deblazed
@@ -86,8 +86,8 @@ class LaserSearch():
         return reduced_spectrum
 
 
-    def search_multiple(self, observations, output_pngs=0, logfile=0, deblaze_method='bstar',
-                        db_write=0, stats=0, multi_cores=1,number_mads = 5,quiet=1):
+    def search_multiple(self, observations, output_pngs=0, logfile=0, deblaze_method='percentile',
+                        db_write=0, stats=0, multi_cores=1,number_mads = 5,quiet=1, search_title="TitleUnset"):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
         ctr = 1
@@ -96,9 +96,10 @@ class LaserSearch():
             deviation_dict = dict()
             perc_thresh_dict = dict()
         if output_pngs or logfile:
-
-
-            pass
+            try:
+                mkdir(apfdefs.laser_search_run_dir + search_title)
+            except OSError:
+                pass
 
         # a little pseudocodey
         for observation in observations:
@@ -134,7 +135,10 @@ class LaserSearch():
                 except:
                     raw = None
                 ndev = len(reduced_spectrum.devs)
-                print('Writing output images to '+ apfdefs.output_png_dir)
+
+                savedir = apfdefs.laser_search_run_dir + search_title + '/'
+                print('Writing output images to '+ apfdefs.laser_search_run_dir + search_title)
+                np.savetxt(savedir + ('r%(run)s_%(obs)s_percentiles_and_thresholds.txt' % locals()),reduced_spectrum.percentiles_and_thresholds )
                 if quiet:
                     for i in range(ndev):
                         ord = reduced_spectrum.devs[i][0]
@@ -142,14 +146,18 @@ class LaserSearch():
                         reject = raw.cr_reject(ord, mid)
                         # if reject >=2:
                         #     continue
-                        # TODO pass down a folder here for saving the output
-                        if reduced_spectrum.devs[i][-1] > 6868. and reduced_spectrum.devs[i][-1] < 6885:
+
+                        print(reduced_spectrum.devs[i][-1])
+                        if (reduced_spectrum.devs[i][-1] > 6868. and reduced_spectrum.devs[i][-1] < 6885):
+                            print('REJECTED')
                             continue
-                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1,nmads=number_mads)
+                        elif (reduced_spectrum.devs[i][-1] > 7595. and reduced_spectrum.devs[i][-1] < 7618.):
+                            print('REJECTED')
+                            continue
+                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir,nmads=number_mads)
                 else:
                     for i in tqdm(range(ndev), miniters=int(ndev/10)):
-                        # TODO pass down a folder here for saving the output
-                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=1)
+                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir)
                 pass
 
             #TODO this is first priority
@@ -178,15 +186,16 @@ class LaserSearch():
             pass
 
     def search_run(self,run='bac', output_pngs=0, logfile=0,
-                        db_write=0, stats=0, multi_cores=1,number_mads = 5):
+                        db_write=0, stats=0, multi_cores=1,number_mads = 5, search_title="TitleUnset" ):
         # Look in the reduced dir for files corresponding to this run
         all_reduced = listdir(self.reduced_directory)
         files_to_search = [fn for fn in all_reduced if fn[1:4] == run]
         p = Pool(multi_cores)
         search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, db_write=db_write,
-                                                      stats=stats, number_mads=number_mads)
+                                                      stats=stats, number_mads=number_mads, search_title=search_title)
 
         pool_output = Pool.map(p, search_multi, files_to_search)
+        return pool_output
 
 
 

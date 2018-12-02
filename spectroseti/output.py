@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 __author__ = 'nate'
 
 
-def view_dev(spec,devnum=0,raw=None, save=0, nmads=5):
+def view_dev(spec,devnum=0,raw=None, save='', nmads=5):
     # if Raw is supplied, plots raw postage stamp
 
     # This prevents the figure from popping up on screen before save
@@ -60,7 +60,7 @@ def view_dev(spec,devnum=0,raw=None, save=0, nmads=5):
         if raw:
             reject = raw.cr_reject(ord, mid)
         ax = plt.gca()
-        targname = spec.dat[0].header['TOBJECT']
+        targname = spec.dat[0].header['OBJECT']
         ax.set_title(
             'Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: %(targname)s   Order %(ord)s, central pixel %(central)s, reject value: %(reject)s' % locals())
         if raw:
@@ -76,7 +76,7 @@ def view_dev(spec,devnum=0,raw=None, save=0, nmads=5):
             plt.colorbar()
         plt.tight_layout()
         if save:
-            plt.savefig(apfdefinitions.output_png_dir+'r%(r)s.%(o)s_dev%(devnum)s_%(centralwav)s.png' % locals())
+            plt.savefig(save+'r%(r)s.%(o)s_dev%(devnum)s_%(centralwav)s.png' % locals())
             plt.close()
     except IndexError:
         print('Out of bounds')

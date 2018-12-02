@@ -58,8 +58,11 @@ class APFRedObs(spec.ReducedObs):
             run=self.run
             obs=self.obs
             plt.figure()
-            plt.plot(self.wavs[order,:], self.counts[order,:-1])
-            plt.scatter(self.wavs[order,:], self.counts[order,:-1],c='r',s=6.)
+            plt.plot(self.wavs[order,:], self.counts[order,:-1], zorder=1)
+            plt.scatter(self.wavs[order,:], self.counts[order,:-1],c='r',s=4., zorder=2)
+            if self.percentiles_and_thresholds:
+                plt.hlines(self.percentiles_and_thresholds[order][0],self.wavs[order,0],self.wavs[order,-1] , color='k', zorder=3)
+                plt.hlines(self.percentiles_and_thresholds[order][1],self.wavs[order,0],self.wavs[order,-1] , color='g', zorder=4)
             plt.title(('Order %(order)s of ' % locals()) + self.dat[0].header['OBJECT'] +
                       ' in r%(run)s.%(obs)s.fits' % locals())
             plt.ylabel('Flux (Counts)')
@@ -74,7 +77,10 @@ class APFRedObs(spec.ReducedObs):
             obs = self.obs
             plt.figure(figsize=[15,10])
             plt.plot(self.wavs[i, :], self.counts[i, :-1])
-            plt.scatter(self.wavs[i, :], self.counts[i, :-1], c='r', s=6.)
+            plt.scatter(self.wavs[i, :], self.counts[i, :-1], c='r', s=4., zorder=2)
+            if self.percentiles_and_thresholds:
+                plt.hlines(self.percentiles_and_thresholds[i][0],self.wavs[i,0],self.wavs[i,-1] , color='k', zorder=3)
+                plt.hlines(self.percentiles_and_thresholds[i][1],self.wavs[i,0],self.wavs[i,-1] , color='g', zorder=4)
             plt.title(('Order %(i)s of ' % locals()) + self.dat[0].header['OBJECT'] +
                       ' in r%(run)s.%(obs)s.fits' % locals())
             plt.ylabel('Flux (Counts)')
@@ -87,6 +93,11 @@ class APFRedObs(spec.ReducedObs):
                        savitzky_degree=4, perc=50, bstar_correction=None, multi_cores=1):
         if method == 'savitzky':
             deblaze = lambda x: utilities.deblaze(x, method='savitzky', percentile_kernel=percentile_kernel,
+                                                  savitzky_kernel=savitzky_kernel,
+                                                  savitzky_degree=savitzky_degree, perc=perc)
+            self.counts = np.apply_along_axis(deblaze, 1, self.counts)
+        elif method == 'percentile':
+            deblaze = lambda x: utilities.deblaze(x, method='percentile', percentile_kernel=percentile_kernel,
                                                   savitzky_kernel=savitzky_kernel,
                                                   savitzky_degree=savitzky_degree, perc=perc)
             self.counts = np.apply_along_axis(deblaze, 1, self.counts)
@@ -110,7 +121,17 @@ class APFRedObs(spec.ReducedObs):
                 p = Pool(multi_cores)
                 pool_output = Pool.map(p, deblaze, self.counts)
                 self.counts = np.array(pool_output)
+
+                deblaze = lambda x: utilities.deblaze(x, method='percentile', percentile_kernel=percentile_kernel,
+                                                      savitzky_kernel=savitzky_kernel,
+                                                      savitzky_degree=savitzky_degree, perc=perc)
+                self.counts = np.apply_along_axis(deblaze, 1, self.counts)
             else:
+                self.counts = np.apply_along_axis(deblaze, 1, self.counts)
+
+                deblaze = lambda x: utilities.deblaze(x, method='percentile', percentile_kernel=percentile_kernel,
+                                                      savitzky_kernel=savitzky_kernel,
+                                                      savitzky_degree=savitzky_degree, perc=perc)
                 self.counts = np.apply_along_axis(deblaze, 1, self.counts)
         else:
             raise KeyError(
@@ -294,12 +315,6 @@ def find_deviations(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=0, atla
         final_threshold = 1.3 * percentile
         secondary_threshold = 1.15 * percentile
     # Accumulator for testing whole-dataset thresholding
-
-    if order == 35:
-        print(percentile)
-        print(threshold)
-        print(final_threshold)
-        pass
     acc.append([percentile, final_threshold])
     contig = utilities.finddeviates(ords[order], final_threshold, npix=npix)
     if len(contig) != 0:
@@ -338,11 +353,6 @@ def find_deviations_basic(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=1
     threshold = utilities.findthresh(ords[order] - percentile)
     final_threshold = 1.5 * percentile
     # Accumulator for testing whole-dataset thresholding
-    if order == 35:
-        print(percentile)
-        print(threshold)
-        print(final_threshold)
-        pass
     acc.append([percentile, final_threshold])
     contig = utilities.finddeviates(ords[order], final_threshold, npix=npix)
     if len(contig) != 0:
