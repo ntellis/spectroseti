@@ -28,6 +28,7 @@ class APFRedObs(spec.ReducedObs):
         self.obs = obs
         self.loadobservation(run, obs)
         self.atlas = atlas
+        self.order_medians = map(np.median, self.counts)
 
     def loadobservation(self, run, obs, deblaze=0):
         """

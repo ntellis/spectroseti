@@ -20,6 +20,12 @@ import pandas as pd
 from os import listdir, mkdir
 from pathos.multiprocessing import ProcessingPool as Pool
 
+try:
+   import cPickle as pickle
+except:
+   import pickle
+
+
 class Error(Exception):
     """Base class for exceptions in this module."""
     pass
@@ -87,7 +93,7 @@ class LaserSearch():
 
 
     def search_multiple(self, observations, output_pngs=0, logfile=0, deblaze_method='percentile',
-                        db_write=0, stats=0, multi_cores=1,number_mads = 5,quiet=1, search_title="TitleUnset"):
+                        write_metadata=0, stats=0, multi_cores=1, number_mads = 5, quiet=1, search_title="TitleUnset"):
         # observations expects a tuple of run,obs pairs
         # setup directories, filenames, local accumulator variables etc
         ctr = 1
@@ -165,9 +171,35 @@ class LaserSearch():
                 # Accumulate statistics for logfile
                 pass
 
-            if db_write:
-                # Save to database
-                pass
+            if write_metadata:
+                savedir = apfdefs.laser_search_run_dir + search_title + '/'
+
+                target_name = reduced_spectrum.dat[0].header['OBJECT']
+                exposure_time = reduced_spectrum.dat[0].header['EXPTIME']
+                RA = reduced_spectrum.dat[0].header['RA']
+                HA = reduced_spectrum.dat[0].header['HA']
+                DEC = reduced_spectrum.dat[0].header['DEC']
+                airmass = reduced_spectrum.dat[0].header['AIRMASS']
+                meta = {'target_name':target_name, 'exposure_time':exposure_time, 'RA':RA, 'HA':HA, 'DEC':DEC,
+                        'airmass':airmass, 'deblaze_method':deblaze_method, 'number_mads':number_mads,
+                        'search_title':search_title}
+
+                raw = None
+                try:
+                    raw = apf.APFRawObs(run, obs)
+                except:
+                    raw = None
+                ndev = len(reduced_spectrum.devs)
+
+                devs_complete = []
+                for i in range(ndev):
+                    devs_complete.append({'dev': reduced_spectrum.devs[i],'cosmic_reject_value':
+                        raw.cr_reject(reduced_spectrum.devs[i][0],reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1]//2)})
+                meta_dictionary = {'meta': meta, 'devs':devs_complete, 'percentiles_and_thresholds': reduced_spectrum.percentiles_and_thresholds,
+                                   'order_medians': reduced_spectrum.order_medians}
+
+                pickle.dump(meta_dictionary, open(savedir + 'r%(run)s.%(obs)s_metadata_pickle.p' % locals(), "wb"))
+
 
             if stats:
                 title = tuple(observation)
@@ -191,7 +223,7 @@ class LaserSearch():
         all_reduced = listdir(self.reduced_directory)
         files_to_search = [fn for fn in all_reduced if fn[1:4] == run]
         p = Pool(multi_cores)
-        search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, db_write=db_write,
+        search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, write_metadata=db_write,
                                                       stats=stats, number_mads=number_mads, search_title=search_title)
 
         pool_output = Pool.map(p, search_multi, files_to_search)

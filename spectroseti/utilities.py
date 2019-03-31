@@ -311,7 +311,7 @@ def deblaze(arr, method = 'savitzky', percentile_kernel = 101, savitzky_kernel=2
         return continuum_fit(arr, percentile_kernel=percentile_kernel, savitzky_kernel=savitzky_kernel,
                              savitzky_degree=savitzky_degree, perc=perc)
     elif method == 'meanshift':
-        median_of_array = np.median(arr)
+        median_of_array = np.median((arr) + 1000.)
         bandwidth = estimate_bandwidth(arr[:, np.newaxis], quantile=0.1)
         ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
         ms.fit(arr[:, np.newaxis])
@@ -320,6 +320,7 @@ def deblaze(arr, method = 'savitzky', percentile_kernel = 101, savitzky_kernel=2
         labels = ms.labels_
         # Replace the missing values (not at maximal cluster) with median of array values in cluster in original array
         test[labels != 0] = np.median(test[labels == 0])
+        test[test == 0] = 1
 
         med_test = sg.medfilt(test, kernel_size=101)
 
@@ -365,11 +366,12 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         kde = KernelDensity(kernel=kernel, bandwidth=kernel_bandwidth).fit(order)
 
     elif method == 'meanshift':
+        order_subset = order[::10,np.newaxis]
         try:
-            bandwidth = estimate_bandwidth(order[:,np.newaxis], quantile=0.1)
+            bandwidth = estimate_bandwidth(order_subset, quantile=0.1)
         except ValueError:
             # Replace the NaN with enarest value
-            order_to_estimate = order[:,np.newaxis]
+            order_to_estimate = order_subset
             ind = np.where(~np.isinf(order_to_estimate))[0]
             first, last = ind[0], ind[-1]
             order_to_estimate[:first] = order_to_estimate[first]
@@ -377,7 +379,7 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
             bandwidth = estimate_bandwidth(order_to_estimate, quantile=0.1)
         # print ('Bandwidth is {0}'.format(bandwidth))
         ms = MeanShift(bandwidth=bandwidth, bin_seeding=True)
-        ms.fit(order[:,np.newaxis])
+        ms.fit(order_subset)
         labels = ms.labels_
         cluster_centers = ms.cluster_centers_
         labels_unique = np.unique(labels)
@@ -390,7 +392,7 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         # TODO Determine why there is a index error ocurring here - should there be more than 3 clusters
         # or is this normal behavior?
         label_counter = Counter(labels)
-        top_labels = filter(lambda x: x[1] > 1000, label_counter.most_common())
+        top_labels = filter(lambda x: x[1] > 100, label_counter.most_common())
         return np.max(map(lambda x: cluster_centers[x[0]][0],top_labels))
     else:
         raise KeyError
