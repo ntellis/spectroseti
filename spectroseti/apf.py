@@ -29,6 +29,7 @@ class APFRedObs(spec.ReducedObs):
         self.loadobservation(run, obs)
         self.atlas = atlas
         self.order_medians = map(np.median, self.counts)
+        self.percentiles_and_thresholds = None
 
     def loadobservation(self, run, obs, deblaze=0):
         """
@@ -90,7 +91,7 @@ class APFRedObs(spec.ReducedObs):
             plt.cla()
             plt.close()
 
-    def deblaze_orders(self, method='meanshift', percentile_kernel=101, savitzky_kernel=2001,
+    def deblaze_orders(self, method='meanshift', percentile_kernel=501, savitzky_kernel=2001,
                        savitzky_degree=4, perc=50, bstar_correction=None, multi_cores=1):
         if method == 'savitzky':
             deblaze = lambda x: utilities.deblaze(x, method='savitzky', percentile_kernel=percentile_kernel,
@@ -324,10 +325,10 @@ def find_deviations(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=0, atla
             if x[1] > 500 and x[0] + x[1] < 4108:# \ COMMENTED OUT THE IGNORED WAVELENGTHS
                 # and not hires_ignored_wavelengths(wavs[order][midpt]) \
                 # and not list(atlas.ns_lookup(wavs[order][midpt])) and not has_singularity(ords[order]):
-                deviation_pixels = ords[order][x[1]:x[1] + x[0]] - final_threshold
+                deviation_pixels = ords[order][x[1]:x[1] + x[0]]
                 out.append(
                     [order, x[0], x[1], float(percentile), float(threshold), float(np.mean(deviation_pixels)),
-                     float(np.median(deviation_pixels)), float(wavs[order][midpt])])
+                     float(np.median(deviation_pixels)), float(wavs[order][midpt]), max(deviation_pixels)])
     return out
 
 
@@ -362,10 +363,10 @@ def find_deviations_basic(ords, wavs, order, perc=75, n_mads=5, alt_min_thresh=1
             if x[1] > 500 and x[0] + x[1] < 4108 and x[0] < 10:  # \ COMMENTED OUT THE IGNORED WAVELENGTHS
                 # and not hires_ignored_wavelengths(wavs[order][midpt]) \
                 # and not list(atlas.ns_lookup(wavs[order][midpt])) and not has_singularity(ords[order]):
-                deviation_pixels = ords[order][x[1]:x[1] + x[0]] - final_threshold
+                deviation_pixels = ords[order][x[1]:x[1] + x[0]]
                 out.append(
                     [order, x[0], x[1], float(percentile), float(threshold), float(np.mean(deviation_pixels)),
-                     float(np.median(deviation_pixels)), float(wavs[order][midpt])])
+                     float(np.median(deviation_pixels)), float(wavs[order][midpt]), max(deviation_pixels)])
     return out
 
 

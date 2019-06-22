@@ -5,29 +5,9 @@ matplotlib.use('TkAgg')
 
 import spectroseti.runner as runner
 
-observations = [['awx', 222]]  # ,[],['awx',223],['awx',224]]
-bacrun = [['bac', 179],
-          ['bac', 180],
-          ['bac', 181],
-          ['bac', 182],
-          ['bac', 183],
-          ['bac', 184],
-          ['bac', 185],
-          ['bac', 186],
-          ['bac', 187],
-          ['bac', 188],
-          ['bac', 189],
-          ['bac', 190],
-          ['bac', 191],
-          ['bac', 192],
-          ['bac', 193],
-          ['bac', 194],
-          ['bac', 195],
-          ['bac', 196],
-          ['bac', 197],
-          ['bac', 198],
-          ['bac', 199],
-          ['bac', 200],
+observations = [['awx', 222],['awx',223],['awx',224]]
+# observations = [['bkj', 185],['blj',186],['bkj',187]]
+bacrun = [['bac', 200],
           ['bac', 201],
           ['bac', 202],
           ['bac', 203],
@@ -155,7 +135,7 @@ bacrun = [['bac', 179],
 
 LS = runner.LaserSearch()
 
-LS.search_multiple(observations, output_pngs=0, deblaze_method='meanshift', number_mads=8,write_metadata=True, search_title='Meta Test')
+LS.search_multiple(observations, output_pngs=1, deblaze_method='meanshift', number_mads=8,write_metadata=True, search_title='Meta Test jun16')
 
 # p = Pool(6)
 # search_multi = lambda x: LS.search_multiple([x], output_pngs=1,number_mads=20, search_title='bac285')

@@ -296,7 +296,7 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve(m[::-1], y, mode='valid')
 
 # This is the most effective continuum fit
-def continuum_fit(arr, percentile_kernel = 101,savitzky_kernel = 2001, savitzky_degree=4, perc=50):
+def continuum_fit(arr, percentile_kernel = 501,savitzky_kernel = 2001, savitzky_degree=4, perc=50):
     # This fixes the singularities
     # Value of 500 chosen arbitrarily - should not have too much of an effect
     fixval = np.max([np.abs(np.min(arr) * 2),500.])
@@ -326,9 +326,11 @@ def deblaze(arr, method = 'savitzky', percentile_kernel = 101, savitzky_kernel=2
 
         return arr / med_test * median_of_array
     elif method == 'percentile':
+        # This code has been adapted - the percentile kernel specified is used to Lower Bound only
         fixval = np.max([np.abs(np.min(arr) * 2), 500.])
         fix = arr + fixval
-        pcf = percentile_filter(fix, perc, size=percentile_kernel)
+        pcf = np.max(np.array([percentile_filter(fix, perc, size=percentile_kernel),
+                               percentile_filter(fix, perc, size=101)]), axis=0)
         return fix / (pcf / np.mean(pcf)) - fixval
 
     else:
@@ -393,6 +395,8 @@ def getpercentile(order, perc, method='meanshift', kernel_bandwidth=100, kernel=
         # or is this normal behavior?
         label_counter = Counter(labels)
         top_labels = filter(lambda x: x[1] > 100, label_counter.most_common())
+        if top_labels.__len__() == 0:
+            top_labels = filter(lambda x: x[1] > 50, label_counter.most_common())
         return np.max(map(lambda x: cluster_centers[x[0]][0],top_labels))
     else:
         raise KeyError

@@ -178,9 +178,11 @@ class LaserSearch():
                 exposure_time = reduced_spectrum.dat[0].header['EXPTIME']
                 RA = reduced_spectrum.dat[0].header['RA']
                 HA = reduced_spectrum.dat[0].header['HA']
+                AZ = reduced_spectrum.dat[0].header['AZ']
                 DEC = reduced_spectrum.dat[0].header['DEC']
                 airmass = reduced_spectrum.dat[0].header['AIRMASS']
-                meta = {'target_name':target_name, 'exposure_time':exposure_time, 'RA':RA, 'HA':HA, 'DEC':DEC,
+                meta = {'run': run, 'obs': obs, 'target_name':target_name, 'exposure_time':exposure_time,
+                        'RA':RA, 'HA':HA, 'DEC':DEC, 'AZ': AZ,
                         'airmass':airmass, 'deblaze_method':deblaze_method, 'number_mads':number_mads,
                         'search_title':search_title}
 
@@ -222,12 +224,16 @@ class LaserSearch():
         # Look in the reduced dir for files corresponding to this run
         all_reduced = listdir(self.reduced_directory)
         files_to_search = [fn for fn in all_reduced if fn[1:4] == run]
-        p = Pool(multi_cores)
+
         search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, write_metadata=db_write,
                                                       stats=stats, number_mads=number_mads, search_title=search_title)
-
-        pool_output = Pool.map(p, search_multi, files_to_search)
-        return pool_output
+        if multi_cores > 0:
+            p = Pool(multi_cores)
+            pool_output = p.map(search_multi, files_to_search)
+            return pool_output
+        else:
+            output = map(search_multi, files_to_search)
+            return output
 
 
 
