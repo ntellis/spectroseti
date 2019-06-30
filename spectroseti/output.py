@@ -82,7 +82,9 @@ def view_dev(spec,devnum=0,raw=None, save='', nmads=5, reject_value_to_ignore=2)
         if save:
             plt.savefig(save+'r%(r)s.%(o)s_dev%(devnum)s_%(centralwav)s.jpg' % locals(), quality=20)
             plt.close()
-    except IndexError:
+    except IndexError as e:
         print('Out of bounds')
-    except ValueError:
+        print(e)
+    except ValueError as e:
         print('Value error caught - probably a mismatch size')
+        print(e)
