@@ -11,7 +11,7 @@ from matplotlib import pyplot as plt
 __author__ = 'nate'
 
 
-def view_dev(spec,devnum=0,raw=None, save='', nmads=5):
+def view_dev(spec,devnum=0,raw=None, save='', nmads=5, reject_value_to_ignore=2):
     # if Raw is supplied, plots raw postage stamp
 
     # This prevents the figure from popping up on screen before save
@@ -28,7 +28,14 @@ def view_dev(spec,devnum=0,raw=None, save='', nmads=5):
         halfwidth = spec.devs[devnum][1]//2 + 1
         mid = spec.devs[devnum][2] + spec.devs[devnum][1]//2
         centralwav = spec.wavs[ord, mid]
-        plt.figure(figsize=(16, 11), dpi=80)
+        plt.figure(figsize=(16, 11), dpi=60)
+
+        reject = 'no_raw'
+        if raw:
+            reject = raw.cr_reject(ord, mid)
+            if reject > reject_value_to_ignore-1:
+                return
+
         plt.title('Deviation number %(devnum)s in r%(r)s.%(o)s.fits, target: . Order %(ord)s, central pixel %(central)s' % locals())
         ax1 = plt.subplot(311)
         ax1.plot(spec.wavs[ord],spec.counts[ord,:-1])
@@ -56,9 +63,6 @@ def view_dev(spec,devnum=0,raw=None, save='', nmads=5):
         ax2.set_xlim(spec.wavs[ord][low] - .05, spec.wavs[ord][high] + .05)
         plt.xlabel('Wavelength (Ang)')
         plt.ylabel('Counts per pixel')
-        reject = 'no_raw'
-        if raw:
-            reject = raw.cr_reject(ord, mid)
         ax = plt.gca()
         targname = spec.dat[0].header['OBJECT']
         ax.set_title(
@@ -76,7 +80,7 @@ def view_dev(spec,devnum=0,raw=None, save='', nmads=5):
             plt.colorbar()
         plt.tight_layout()
         if save:
-            plt.savefig(save+'r%(r)s.%(o)s_dev%(devnum)s_%(centralwav)s.png' % locals())
+            plt.savefig(save+'r%(r)s.%(o)s_dev%(devnum)s_%(centralwav)s.jpg' % locals(), quality=20)
             plt.close()
     except IndexError:
         print('Out of bounds')

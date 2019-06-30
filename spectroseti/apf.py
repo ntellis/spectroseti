@@ -247,9 +247,11 @@ class APFRawObs(spec.RawObs):
             postage_stamp = self.retrieve_subset(order, pix, yradius=yradius, xradius=12)
 
             one_step,two_step, maxval = utilities.compute_maxpix_deviance(postage_stamp)
-            max1 = np.sum(np.array(one_step) < 0.20)
-            max2 = np.sum(np.array(two_step) < 0.06)
-            compval = max1 + max2
+            max1spatial = np.sum(np.array(one_step[:2]) < 0.20)
+            max2spatial = np.sum(np.array(two_step[:2]) < 0.06)
+            max1spec = np.sum(np.array(one_step[2:]) < 0.20)
+            max2spec = np.sum(np.array(two_step[2:]) < 0.06)
+            compval = max1spatial + max2spatial + max1spec +max2spec
             return compval
 
     def run_obs_to_filename(self, run, obs):

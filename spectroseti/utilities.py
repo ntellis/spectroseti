@@ -537,7 +537,10 @@ def find_max_deviant_pixel(postage_stamp, xoffset=3,yoffset=3):
         lambda x: np.std(x[x < np.percentile(x, 90)]), 1, postage_stamp),
         (yradius * 2, 1)), repeats=xradius * 2, axis=1)
 
-    comp = (postage_stamp - means) / stds
+    # adjustment made to comp to scale with sqrt of mean - this should
+    # weight higher-count deviates higher, thereby removing the problem of low-count
+    # pixzels on the wings being set as the most deviant
+    comp = (postage_stamp - means)*np.sqrt(means-np.min(means)) / stds
     centercomp = comp[yoffset:-1 - yoffset,
                  xradius - xoffset:xradius + xoffset]
     maxinds = np.unravel_index(np.argmax(centercomp), centercomp.shape)
@@ -555,6 +558,7 @@ def compute_maxpix_deviance(postage_stamp, xoffset=3,yoffset=3):
     rowpercs = np.percentile(postage_stamp,1,axis=1)
     postage_stamp_nobias = postage_stamp - rowpercs[:,None]
     maxval = float(postage_stamp_nobias[inds])
+
     # comps_1step = [maxval - postage_stamp[inds[0] + 1, inds[1]], maxval - postage_stamp[inds[0] - 1, inds[1]],
     #                maxval - postage_stamp[inds[0], inds[1] + 1], maxval - postage_stamp[inds[0], inds[1] - 1]]
     ratios_1step = [postage_stamp_nobias[inds[0] + 1, inds[1]]/ maxval ,
