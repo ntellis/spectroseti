@@ -153,12 +153,12 @@ class LaserSearch():
                         # if reject >=2:
                         #     continue
 
-                        print(reduced_spectrum.devs[i][-1])
-                        if (reduced_spectrum.devs[i][-1] > 6868. and reduced_spectrum.devs[i][-1] < 6885):
-                            print('REJECTED')
+                        # print(reduced_spectrum.devs[i][7])
+                        if (reduced_spectrum.devs[i][7] > 6868. and reduced_spectrum.devs[i][7] < 6885):
+                            # print('REJECTED')
                             continue
-                        elif (reduced_spectrum.devs[i][-1] > 7595. and reduced_spectrum.devs[i][-1] < 7618.):
-                            print('REJECTED')
+                        elif (reduced_spectrum.devs[i][7] > 7595. and reduced_spectrum.devs[i][7] < 7618.):
+                            # print('REJECTED')
                             continue
                         spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir,nmads=number_mads)
                 else:
