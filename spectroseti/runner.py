@@ -129,7 +129,7 @@ class LaserSearch():
                 print('Attempted to perform search on:    ' + err.message)
                 print('Skipping....\n')
                 continue
-            except Error:
+            except:
                 print("An error occurred!")
                 continue
 
@@ -223,7 +223,7 @@ class LaserSearch():
                         db_write=0, stats=0, multi_cores=1,number_mads = 5, search_title="TitleUnset" ):
         # Look in the reduced dir for files corresponding to this run
         all_reduced = listdir(self.reduced_directory)
-        files_to_search = [fn for fn in all_reduced if (fn[1:4] == run) & (fn[8]=='.')]
+        files_to_search = [fn for fn in all_reduced if (fn[1:4] == run)]
 
         search_multi = lambda x: self.search_multiple([x], output_pngs=output_pngs, logfile=logfile, write_metadata=db_write,
                                                       stats=stats, number_mads=number_mads, search_title=search_title)
