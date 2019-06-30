@@ -396,7 +396,6 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original
     cts = obs.counts
     wavs = obs.wavs
     if method == 'original':
-        print('Searching order-by-order...')
         for i in tqdm(range(79), leave=False, miniters=8):
             out = find_deviations(cts, wavs, i, perc=perc, n_mads=n_mads,
                                   atlas=atlas, out=out, acc=per_thr_accumulator)
@@ -421,7 +420,6 @@ def findhigher(obs, n_mads, perc, atlas=spec.WavelengthAtlas(), method='original
         return out, per_thr_accumulator
     # Deprecated, used for a simplistic > 1.3* continuum threshold
     elif method == 'basic':
-        print('Searching order-by-order...')
         for i in tqdm(range(79), leave=False, miniters=8):
             out = find_deviations_basic(cts, wavs, i, perc=perc, n_mads=n_mads,
                                         atlas=atlas, out=out, acc=per_thr_accumulator, npix=4)
