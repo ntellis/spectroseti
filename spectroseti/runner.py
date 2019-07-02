@@ -19,6 +19,7 @@ from tqdm import tqdm
 import pandas as pd
 from os import listdir, mkdir
 from pathos.multiprocessing import ProcessingPool as Pool
+import sys
 
 try:
    import cPickle as pickle
@@ -110,114 +111,115 @@ class LaserSearch():
         # a little pseudocodey
         for observation in observations:
             print(observation)
-            if observations[0][0] =='r':
-                fn_split = observation.split('.')
-                run = fn_split[0][1:]
-                obs = fn_split[1]
-            else:
-                run = observation[0]
-                obs = observation[1]
             try:
-                if multi_cores>1:
-                    method = 'multiprocess'
+                if observations[0][0] =='r':
+                    fn_split = observation.split('.')
+                    run = fn_split[0][1:]
+                    obs = fn_split[1]
                 else:
-                    method = 'simple'
-                reduced_spectrum = self.search_one(run, obs, load_devs_method=method, deblaze_method=deblaze_method,
-                                                   multi_cores=multi_cores,number_mads=number_mads)
-            # TODO - this does not work for now
-            except InvalidTargetError as err:
-                print('Attempted to perform search on:    ' + err.message)
-                print('Skipping....\n')
-                continue
-            except:
-                print("An error occurred!")
-                continue
-
-            if output_pngs:
-                # generate and save all output
-                raw = None
+                    run = observation[0]
+                    obs = observation[1]
                 try:
-                    raw = apf.APFRawObs(run,obs)
+                    if multi_cores>1:
+                        method = 'multiprocess'
+                    else:
+                        method = 'simple'
+                    reduced_spectrum = self.search_one(run, obs, load_devs_method=method, deblaze_method=deblaze_method,
+                                                       multi_cores=multi_cores,number_mads=number_mads)
+                # TODO - this does not work for now
+                except InvalidTargetError as err:
+                    print('Attempted to perform search on:    ' + err.message)
+                    print('Skipping....\n')
+                    continue
                 except:
-                    raw = None
-                ndev = len(reduced_spectrum.devs)
+                    e = sys.exc_info()[0]
+                    print("An error occurred when loading the reduced spectrum.")
+                    print("Error: %s" % e)
+                    continue
 
-                savedir = apfdefs.laser_search_run_dir + search_title + '/'
-                print('Writing output images to '+ apfdefs.laser_search_run_dir + search_title)
-                np.savetxt(savedir + ('r%(run)s_%(obs)s_percentiles_and_thresholds.txt' % locals()),reduced_spectrum.percentiles_and_thresholds )
-                if quiet:
+                if output_pngs:
+                    # generate and save all output
+                    raw = None
+                    try:
+                        raw = apf.APFRawObs(run,obs)
+                    except:
+                        raw = None
+                    ndev = len(reduced_spectrum.devs)
+
+                    savedir = apfdefs.laser_search_run_dir + search_title + '/'
+                    print('Writing output images to '+ apfdefs.laser_search_run_dir + search_title)
+                    np.savetxt(savedir + ('r%(run)s_%(obs)s_percentiles_and_thresholds.txt' % locals()),reduced_spectrum.percentiles_and_thresholds )
+                    if quiet:
+                        for i in range(ndev):
+                            ord = reduced_spectrum.devs[i][0]
+                            mid = reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1] // 2
+                            reject = raw.cr_reject(ord, mid)
+                            # if reject >=2:
+                            #     continue
+
+                            # print(reduced_spectrum.devs[i][7])
+                            if (reduced_spectrum.devs[i][7] > 6868. and reduced_spectrum.devs[i][7] < 6885):
+                                # print('REJECTED')
+                                continue
+                            elif (reduced_spectrum.devs[i][7] > 7595. and reduced_spectrum.devs[i][7] < 7618.):
+                                # print('REJECTED')
+                                continue
+                            spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir,nmads=number_mads)
+                    else:
+                        for i in tqdm(range(ndev), miniters=int(ndev/10)):
+                            spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir)
+                    pass
+
+                #TODO this is first priority
+                if logfile:
+                    # Accumulate statistics for logfile
+                    pass
+
+                if write_metadata:
+                    savedir = apfdefs.laser_search_run_dir + search_title + '/'
+
+                    target_name = reduced_spectrum.dat[0].header['OBJECT']
+                    exposure_time = reduced_spectrum.dat[0].header['EXPTIME']
+                    RA = reduced_spectrum.dat[0].header['RA']
+                    HA = reduced_spectrum.dat[0].header['HA']
+                    AZ = reduced_spectrum.dat[0].header['AZ']
+                    DEC = reduced_spectrum.dat[0].header['DEC']
+                    airmass = reduced_spectrum.dat[0].header['AIRMASS']
+                    meta = {'run': run, 'obs': obs, 'target_name':target_name, 'exposure_time':exposure_time,
+                            'RA':RA, 'HA':HA, 'DEC':DEC, 'AZ': AZ,
+                            'airmass':airmass, 'deblaze_method':deblaze_method, 'number_mads':number_mads,
+                            'search_title':search_title}
+
+                    raw = None
+                    try:
+                        raw = apf.APFRawObs(run, obs)
+                    except:
+                        raw = None
+                    ndev = len(reduced_spectrum.devs)
+
+                    devs_complete = []
                     for i in range(ndev):
-                        ord = reduced_spectrum.devs[i][0]
-                        mid = reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1] // 2
-                        reject = raw.cr_reject(ord, mid)
-                        # if reject >=2:
-                        #     continue
+                        devs_complete.append({'dev': reduced_spectrum.devs[i],'cosmic_reject_value':
+                            raw.cr_reject(reduced_spectrum.devs[i][0],reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1]//2)})
+                    meta_dictionary = {'meta': meta, 'devs':devs_complete, 'percentiles_and_thresholds': reduced_spectrum.percentiles_and_thresholds,
+                                       'order_medians': reduced_spectrum.order_medians}
 
-                        # print(reduced_spectrum.devs[i][7])
-                        if (reduced_spectrum.devs[i][7] > 6868. and reduced_spectrum.devs[i][7] < 6885):
-                            # print('REJECTED')
-                            continue
-                        elif (reduced_spectrum.devs[i][7] > 7595. and reduced_spectrum.devs[i][7] < 7618.):
-                            # print('REJECTED')
-                            continue
-                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir,nmads=number_mads)
-                else:
-                    for i in tqdm(range(ndev), miniters=int(ndev/10)):
-                        spectroseti.output.view_dev(reduced_spectrum, devnum=i, raw=raw, save=savedir)
-                pass
-
-            #TODO this is first priority
-            if logfile:
-                # Accumulate statistics for logfile
-                pass
-
-            if write_metadata:
-                savedir = apfdefs.laser_search_run_dir + search_title + '/'
-
-                target_name = reduced_spectrum.dat[0].header['OBJECT']
-                exposure_time = reduced_spectrum.dat[0].header['EXPTIME']
-                RA = reduced_spectrum.dat[0].header['RA']
-                HA = reduced_spectrum.dat[0].header['HA']
-                AZ = reduced_spectrum.dat[0].header['AZ']
-                DEC = reduced_spectrum.dat[0].header['DEC']
-                airmass = reduced_spectrum.dat[0].header['AIRMASS']
-                meta = {'run': run, 'obs': obs, 'target_name':target_name, 'exposure_time':exposure_time,
-                        'RA':RA, 'HA':HA, 'DEC':DEC, 'AZ': AZ,
-                        'airmass':airmass, 'deblaze_method':deblaze_method, 'number_mads':number_mads,
-                        'search_title':search_title}
-
-                raw = None
-                try:
-                    raw = apf.APFRawObs(run, obs)
-                except:
-                    raw = None
-                ndev = len(reduced_spectrum.devs)
-
-                devs_complete = []
-                for i in range(ndev):
-                    devs_complete.append({'dev': reduced_spectrum.devs[i],'cosmic_reject_value':
-                        raw.cr_reject(reduced_spectrum.devs[i][0],reduced_spectrum.devs[i][2] + reduced_spectrum.devs[i][1]//2)})
-                meta_dictionary = {'meta': meta, 'devs':devs_complete, 'percentiles_and_thresholds': reduced_spectrum.percentiles_and_thresholds,
-                                   'order_medians': reduced_spectrum.order_medians}
-
-                pickle.dump(meta_dictionary, open(savedir + 'r%(run)s.%(obs)s_metadata_pickle.p' % locals(), "wb"))
+                    pickle.dump(meta_dictionary, open(savedir + 'r%(run)s.%(obs)s_metadata_pickle.p' % locals(), "wb"))
 
 
-            if stats:
-                title = tuple(observation)
-                perc_thresh_dict[title] = reduced_spectrum.percentiles_and_thresholds
-                deviation_dict[title] = reduced_spectrum.devs
-                # Just save every iteration in case it breaks
-                np.save(defs.project_root_dir+'/spectroseti/data/Percentiles_and_thresholds2.npy', perc_thresh_dict)
-                np.save(defs.project_root_dir+'/spectroseti/data/Candidates2.npy', deviation_dict)
+                if stats:
+                    title = tuple(observation)
+                    perc_thresh_dict[title] = reduced_spectrum.percentiles_and_thresholds
+                    deviation_dict[title] = reduced_spectrum.devs
+                    # Just save every iteration in case it breaks
+                    np.save(defs.project_root_dir+'/spectroseti/data/Percentiles_and_thresholds2.npy', perc_thresh_dict)
+                    np.save(defs.project_root_dir+'/spectroseti/data/Candidates2.npy', deviation_dict)
+            except:
+                e = sys.exc_info()[0]
+                print("An unexpected error occurred.")
+                print("Error: %s" % e)
+                continue
 
-
-
-
-        # write logfile
-        if logfile:
-            #save logfile to logfile directory, as well as search run directory
-            pass
 
     def search_run(self,run='bac', output_pngs=0, logfile=0,
                         db_write=0, stats=0, multi_cores=1,number_mads = 5, search_title="TitleUnset" ):
