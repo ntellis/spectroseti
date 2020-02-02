@@ -175,6 +175,40 @@ class APFRedObs(spec.ReducedObs):
         else:
             print("Devs have not been set!")
 
+    #   New (DEC 2019) CR rejector
+    def reduced_image_cr_check(self, ord, central_pixel, continuum):
+        maxpix = np.argmax(self.counts[ord][central_pixel-5:central_pixel+5])
+        subset = self.counts[ord][central_pixel-(maxpix-5)-10:central_pixel-(maxpix-5)+10] - continuum
+        peak = subset[10]
+        subset_norm = subset/peak
+        pair_one = subset_norm[9]+subset_norm[11]
+        pair_two = subset_norm[8]+subset_norm[12]
+        pair_three = subset_norm[7]+subset_norm[13]
+        pair_four = subset_norm[6]+subset_norm[14]
+        pair_five = subset_norm[5]+subset_norm[15]
+        if pair_one > 2.0:
+            print "pair_one > 2.0"
+            return True
+        elif pair_one < 1.0:
+            print "pair_one < 1.0"
+            return True
+        elif pair_two < 0.4:
+            print
+            return True
+        elif pair_one < pair_two:
+            return True
+        elif pair_three < 0.05:
+            return True
+        elif pair_two < pair_three:
+            return True
+        elif pair_three < pair_four:
+            return True
+        elif pair_three < pair_five:
+            return True
+        else:
+            return False
+
+
 
 class APFRawObs(spec.RawObs):
     """
