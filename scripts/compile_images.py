@@ -19,7 +19,7 @@ import glob
 
 candidates = pd.read_csv('../data/allAPFCandidateMetadataOct04_filtered.csv')
 all_image_loc = '/media/nate/DATA/code/output/las_images/allCandidateImages/'
-dest_dir = '/media/nate/DATA/code/output/las_images/intenseCandidateImages/'
+dest_dir = '/media/nate/DATA/code/oustput/las_images/intenseCandidateImages/'
 minwav = 3735.
 
 candidates = candidates.loc[~candidates['target_name'].isin(['NarrowFlat', 'test', 'Dark'])]

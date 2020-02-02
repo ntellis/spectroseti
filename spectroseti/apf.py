@@ -178,7 +178,7 @@ class APFRedObs(spec.ReducedObs):
     #   New (DEC 2019) CR rejector
     def reduced_image_cr_check(self, ord, central_pixel, continuum):
         maxpix = np.argmax(self.counts[ord][central_pixel-5:central_pixel+5])
-        subset = self.counts[ord][central_pixel-(maxpix-5)-10:central_pixel-(maxpix-5)+10] - continuum
+        subset = self.counts[ord][central_pixel+(maxpix-5)-10:central_pixel+(maxpix-5)+10] - continuum
         peak = subset[10]
         subset_norm = subset/peak
         pair_one = subset_norm[9]+subset_norm[11]
