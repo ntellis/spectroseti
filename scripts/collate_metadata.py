@@ -37,7 +37,7 @@ for f in files_to_collate:
     # devs_list = []
     run = meta['run']
     obs = meta['obs']
-    for dev in devs:
+    for i, dev in enumerate(devs):
         counts_per_mad = dev['dev'][4]
         all_devs.append(
             {
@@ -63,7 +63,8 @@ for f in files_to_collate:
                 'HA': meta['HA'],
                 'AZ': meta['AZ'],
                 'reduced_filename': 'r%(run)s.%(obs)s.fits' % locals(),
-                'raw_filename': 'ucb-%(run)s%(obs)s.fits' % locals()
+                'raw_filename': 'ucb-%(run)s%(obs)s.fits' % locals(),
+                'img_prefix': 'r%(run)s.%(obs)s_dev%(i)s' % locals()
             }
         )
     # Now we should make a .csv of all of these data
@@ -89,7 +90,8 @@ for f in files_to_collate:
             'HA',
             'AZ',
             'reduced_filename',
-            'raw_filename']
+            'raw_filename',
+            'img_prefix']
     filename = apfdefs.laser_search_run_dir + '/' + run_name +'_metadata.csv'
     with open(filename, 'wb') as output_file:
         writer = csv.DictWriter(

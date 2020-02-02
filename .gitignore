@@ -2,7 +2,7 @@
 #################
 spectroseti/apfdefinitions.py
 spectroseti/definitions.py
-notebooks/.ipynb_checkpoints/MetadataCollation-checkpoint.ipynb
+notebooks/.ipynb_checkpoints/*
 
 
 # Generic .gitignore #
