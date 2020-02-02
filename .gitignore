@@ -2,7 +2,7 @@
 #################
 spectroseti/apfdefinitions.py
 spectroseti/definitions.py
-notebooks/.ipynb_checkpoints/*
+notebooks/.ipynb_checkpoints/*.ipynb
 
 
 # Generic .gitignore #
