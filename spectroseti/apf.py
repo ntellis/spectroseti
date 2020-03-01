@@ -203,7 +203,7 @@ class APFRedObs(spec.ReducedObs):
         elif pair_three < pair_five:
             return True, "pair_three < pair_five"
         else:
-            return False
+            return False, ""  
 
 
 
