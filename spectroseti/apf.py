@@ -187,24 +187,21 @@ class APFRedObs(spec.ReducedObs):
         pair_four = subset_norm[6]+subset_norm[14]
         pair_five = subset_norm[5]+subset_norm[15]
         if pair_one > 2.0:
-            print "pair_one > 2.0"
-            return True
+            return True, "pair_one > 2.0"
         elif pair_one < 1.0:
-            print "pair_one < 1.0"
-            return True
+            return True, "pair_one < 1.0"
         elif pair_two < 0.4:
-            print
-            return True
+            return True, "pair_two < 0.4"
         elif pair_one < pair_two:
-            return True
+            return True, "pair_one < pair_two"
         elif pair_three < 0.05:
-            return True
+            return True, "pair_three < 0.05"
         elif pair_two < pair_three:
-            return True
+            return True, "pair_two < pair_three"
         elif pair_three < pair_four:
-            return True
+            return True, "pair_three < pair_four"
         elif pair_three < pair_five:
-            return True
+            return True, "pair_three < pair_five"
         else:
             return False
 
